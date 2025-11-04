@@ -1,32 +1,34 @@
 package com.example.carteiravirtual.controller
 
+import com.example.carteiravirtual.model.Cotacao
+import com.example.carteiravirtual.model.CotacaoResponse
 import com.example.carteiravirtual.model.Moeda
 import retrofit2.http.GET
 
 interface AwesomeAPI {
     //GET dolar para real
     @GET("json/last/USD-BRL")
-    suspend fun getDolarReal(): Moeda
+    suspend fun getDolarReal(): CotacaoResponse
 
     //GET dolar para BTC
     @GET("json/last/BTC-USD")
-    suspend fun getDolarBTC(): Moeda
+    suspend fun getDolarBTC(): CotacaoResponse
 
     //GET real para dólar
     @GET("json/last/USD-BRL")
-    suspend fun getRealDolar(): Moeda
+    suspend fun getRealDolar(): CotacaoResponse
 
     //GET real para BTC
     @GET("json/last/BTC-BRL")
-    suspend fun getRealBTC(): Moeda
+    suspend fun getRealBTC(): CotacaoResponse
 
     //GET BTC para real
     @GET("json/last/BTC-BRL")
-    suspend fun getBTCReal(): Moeda
+    suspend fun getBTCReal(): CotacaoResponse
 
     //GET BTC para dólar
     @GET("json/last/BTC-USD")
-    suspend fun getBTCDolar(): Moeda
+    suspend fun getBTCDolar(): CotacaoResponse
 }
 
 
