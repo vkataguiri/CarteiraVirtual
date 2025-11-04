@@ -198,7 +198,7 @@ tools:context=".controller.MainActivity">
         android:layout_height="60dp"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
-        android:layout_marginBottom="48dp"
+        android:layout_marginBottom="72dp"
         android:backgroundTint="#E2F3F0"
         android:text="Converter"
         android:textColor="#000000"
@@ -210,3 +210,5 @@ tools:context=".controller.MainActivity">
         app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+<!--filho da puta desgraçado de bosta-->
