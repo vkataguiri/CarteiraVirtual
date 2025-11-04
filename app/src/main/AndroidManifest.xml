@@ -12,7 +12,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CarteiraVirtual">
         <activity
-            android:name=".MainActivity"
+            android:name=".controller.ConverterRecursos"
+            android:exported="false" />
+        <activity
+            android:name=".controller.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
