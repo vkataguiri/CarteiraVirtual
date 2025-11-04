@@ -4,5 +4,4 @@ data class Moeda(
     val id: Int = 0,
     val saldo: Double,
     val tipo: TipoMoeda
-)// Nothing Comment
-// Nothing Comment
+)
