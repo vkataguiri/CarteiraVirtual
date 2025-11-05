@@ -1,6 +1,6 @@
 package com.example.carteiravirtual.controller
 
-import android.app.Activity
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
@@ -83,6 +83,7 @@ class ConverterRecursos : AppCompatActivity() {
         spinnerDestino.setSelection(1)
     }
 
+    @SuppressLint("SetTextI18n")
     private fun setupListeners() {
         buttonConverter.setOnClickListener {
             val origemStr = spinnerOrigem.selectedItem.toString()
@@ -150,8 +151,14 @@ class ConverterRecursos : AppCompatActivity() {
         }
 
         buttonComprar.setOnClickListener {
+            val origemStr = spinnerOrigem.selectedItem.toString()
             val destinoStr = spinnerDestino.selectedItem.toString()
             val valorStr = editTextValorOrigem.text.toString()
+
+            if (origemStr == destinoStr) {
+                Toast.makeText(this, "As moedas de origem e destino não podem ser iguais.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
             if (valorStr.isBlank()) {
                 textInputLayoutValor.error = "Insira um valor para comprar."
@@ -167,20 +174,27 @@ class ConverterRecursos : AppCompatActivity() {
                 textViewResultado.text = ""
 
                 try {
-                    val valorComprado = valorStr.toDouble()
-                    if (valorComprado <= 0) {
-                        throw NumberFormatException("O valor deve ser positivo.")
+                    val valorOrigem = valorStr.toDouble()
+                    if (valorOrigem <= 0) {
+                        throw NumberFormatException("O valor da compra deve ser positivo.")
                     }
 
+                    val moedaOrigem = TipoMoeda.valueOf(origemStr)
                     val moedaDestino = TipoMoeda.valueOf(destinoStr)
+
+                    val taxa = withContext(Dispatchers.IO) {
+                        getTaxa(moedaOrigem, moedaDestino)
+                    }
+
+                    val valorDestino = valorOrigem * taxa
 
                     val saldoDestinoAtual = carteira[moedaDestino]?.saldo ?: 0.0
 
-                    carteira[moedaDestino] = carteira[moedaDestino]!!.copy(saldo = saldoDestinoAtual + valorComprado)
+                    carteira[moedaDestino] = carteira[moedaDestino]!!.copy(saldo = saldoDestinoAtual + valorDestino)
 
                     atualizarCarteira()
 
-                    textViewResultado.text = "Comprado: ${formatarValor(valorComprado, moedaDestino)}"
+                    textViewResultado.text = "Comprado: ${formatarValor(valorDestino, moedaDestino)}"
                     editTextValorOrigem.text?.clear()
                 } catch (e: NumberFormatException) {
                     Toast.makeText(this@ConverterRecursos, e.message ?: "Valor inválido.", Toast.LENGTH_LONG).show()
@@ -199,10 +213,24 @@ class ConverterRecursos : AppCompatActivity() {
         }
     }
 
-    private suspend fun getTaxa(moedaOrigem: TipoMoeda, moedaDestino: TipoMoeda): Double {
+    private fun getTaxa(moedaOrigem: TipoMoeda, moedaDestino: TipoMoeda): Double {
         if (moedaOrigem == moedaDestino) return 1.0
 
-        val par = "${moedaOrigem.name}-${moedaDestino.name}"
+        if (moedaDestino == TipoMoeda.BTC) {
+            val parInvertido = "${moedaDestino.name}-${moedaOrigem.name}"
+            val taxaInvertida = chamarApiDeTaxa(parInvertido, moedaDestino, moedaOrigem)
+
+            if (taxaInvertida == 0.0) {
+                throw Exception("Taxa de câmbio invertida retornou 0.")
+            }
+            return 1.0 / taxaInvertida
+        }
+
+        val parDireto = "${moedaOrigem.name}-${moedaDestino.name}"
+        return chamarApiDeTaxa(parDireto, moedaOrigem, moedaDestino)
+    }
+
+    private fun chamarApiDeTaxa(par: String, origemApi: TipoMoeda, destinoApi: TipoMoeda): Double {
         val urlString = "https://economia.awesomeapi.com.br/json/last/$par"
 
         val url = URL(urlString)
@@ -215,14 +243,14 @@ class ConverterRecursos : AppCompatActivity() {
             val inputStream = connection.inputStream
             val response = inputStream.bufferedReader().use {it.readText()}
 
-            val chaveJson = "${moedaOrigem.name}${moedaDestino.name}"
-            val jsonResponse = JSONObject(response)
-            val parJson = jsonResponse.getJSONObject(chaveJson)
+            val chaveJson = "${origemApi.name}${destinoApi.name}"
+            val jsonReponse = JSONObject(response)
+            val parJson = jsonReponse.getJSONObject(chaveJson)
 
             val taxaStr = parJson.getString("bid")
             return taxaStr.toDouble()
         } catch(e: Exception) {
-            throw Exception("Não foi possível obter a taxa de câmbio para $par")
+            throw Exception("Não foi possível obter a taxa de câmbio para $par: ${e.message}")
         } finally {
             connection.disconnect()
         }
@@ -240,6 +268,6 @@ class ConverterRecursos : AppCompatActivity() {
         val intentResultado = Intent()
 
         intentResultado.putExtra("CARTEIRA_ATUALIZADA_EXTRA", carteira as HashMap)
-        setResult(Activity.RESULT_OK, intentResultado)
+        setResult(RESULT_OK, intentResultado)
     }
 }
