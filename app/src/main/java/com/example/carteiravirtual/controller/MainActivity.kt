@@ -1,11 +1,11 @@
 package com.example.carteiravirtual.controller
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.example.carteiravirtual.R
 import com.example.carteiravirtual.model.Moeda
 import com.example.carteiravirtual.model.TipoMoeda
@@ -17,6 +17,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvSaldoReal: TextView
     private lateinit var tvSaldoDolar: TextView
     private lateinit var tvSaldoBitcoin: TextView
+    private lateinit var btnConverter: Button
 
     // Dados de exemplo
     private val carteira = listOf(
@@ -33,8 +34,14 @@ class MainActivity : AppCompatActivity() {
         tvSaldoReal = findViewById(R.id.tvSaldoReal)
         tvSaldoDolar = findViewById(R.id.tvSaldoDolar)
         tvSaldoBitcoin = findViewById(R.id.tvSaldoBitcoin)
+        btnConverter = findViewById(R.id.btnConverter)
 
         atualizarValores(carteira)
+
+        btnConverter.setOnClickListener {
+            val intent = Intent(this, ConverterRecursosActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private fun atualizarValores(carteira: List<Moeda>) {
