@@ -1,21 +1,58 @@
 package com.example.carteiravirtual.controller
 
 import android.os.Bundle
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.carteiravirtual.R
+import com.example.carteiravirtual.model.Moeda
+import com.example.carteiravirtual.model.TipoMoeda
+import java.text.NumberFormat
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
+
+    private lateinit var tvSaldoReal: TextView
+    private lateinit var tvSaldoDolar: TextView
+    private lateinit var tvSaldoBitcoin: TextView
+
+    // Dados de exemplo
+    private val carteira = listOf(
+        Moeda(saldo = 100000.0, tipo = TipoMoeda.BRL),
+        Moeda(saldo = 50000.0, tipo = TipoMoeda.USD),
+        Moeda(saldo = 0.5, tipo = TipoMoeda.BTC)
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+
+        tvSaldoReal = findViewById(R.id.tvSaldoReal)
+        tvSaldoDolar = findViewById(R.id.tvSaldoDolar)
+        tvSaldoBitcoin = findViewById(R.id.tvSaldoBitcoin)
+
+        atualizarValores(carteira)
+    }
+
+    private fun atualizarValores(carteira: List<Moeda>) {
+        carteira.forEach { moeda ->
+            when (moeda.tipo) {
+                TipoMoeda.BRL -> {
+                    val formato = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
+                    tvSaldoReal.text = formato.format(moeda.saldo)
+                }
+                TipoMoeda.USD -> {
+                    val formato = NumberFormat.getCurrencyInstance(Locale.US)
+                    tvSaldoDolar.text = formato.format(moeda.saldo)
+                }
+                TipoMoeda.BTC -> {
+                    // Formato específico para Bitcoin
+                    tvSaldoBitcoin.text = "%.4f BTC".format(moeda.saldo)
+                }
+            }
         }
     }
 }
