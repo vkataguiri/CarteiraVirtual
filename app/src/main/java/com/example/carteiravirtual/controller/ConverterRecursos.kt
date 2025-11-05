@@ -30,6 +30,8 @@ class ConverterRecursos : AppCompatActivity() {
     private lateinit var textInputLayoutValor: TextInputLayout
     private lateinit var editTextValorOrigem: TextInputEditText
     private lateinit var buttonConverter: Button
+    private lateinit var buttonComprar: Button
+    private lateinit var buttonVoltar: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var textViewResultado: TextView
 
@@ -53,6 +55,8 @@ class ConverterRecursos : AppCompatActivity() {
         textInputLayoutValor = findViewById(R.id.textInputLayoutValor)
         editTextValorOrigem = findViewById(R.id.editTextValorOrigem)
         buttonConverter = findViewById(R.id.buttonConverter)
+        buttonVoltar = findViewById(R.id.buttonVoltar)
+        buttonComprar = findViewById(R.id.buttonComprar)
         progressBar = findViewById(R.id.progressBar)
         textViewResultado = findViewById(R.id.textViewResultado)
 
@@ -100,6 +104,7 @@ class ConverterRecursos : AppCompatActivity() {
             lifecycleScope.launch(Dispatchers.Main) {
                 progressBar.visibility = View.VISIBLE
                 buttonConverter.isEnabled = false
+                buttonComprar.isEnabled = false
                 textViewResultado.text = ""
 
                 try {
@@ -139,8 +144,58 @@ class ConverterRecursos : AppCompatActivity() {
                 } finally {
                     progressBar.visibility = View.GONE
                     buttonConverter.isEnabled = true
+                    buttonComprar.isEnabled = true
                 }
             }
+        }
+
+        buttonComprar.setOnClickListener {
+            val destinoStr = spinnerDestino.selectedItem.toString()
+            val valorStr = editTextValorOrigem.text.toString()
+
+            if (valorStr.isBlank()) {
+                textInputLayoutValor.error = "Insira um valor para comprar."
+                return@setOnClickListener
+            }
+
+            textInputLayoutValor.error = null
+
+            lifecycleScope.launch(Dispatchers.Main) {
+                progressBar.visibility = View.VISIBLE
+                buttonConverter.isEnabled = false
+                buttonComprar.isEnabled = false
+                textViewResultado.text = ""
+
+                try {
+                    val valorComprado = valorStr.toDouble()
+                    if (valorComprado <= 0) {
+                        throw NumberFormatException("O valor deve ser positivo.")
+                    }
+
+                    val moedaDestino = TipoMoeda.valueOf(destinoStr)
+
+                    val saldoDestinoAtual = carteira[moedaDestino]?.saldo ?: 0.0
+
+                    carteira[moedaDestino] = carteira[moedaDestino]!!.copy(saldo = saldoDestinoAtual + valorComprado)
+
+                    atualizarCarteira()
+
+                    textViewResultado.text = "Comprado: ${formatarValor(valorComprado, moedaDestino)}"
+                    editTextValorOrigem.text?.clear()
+                } catch (e: NumberFormatException) {
+                    Toast.makeText(this@ConverterRecursos, e.message ?: "Valor inválido.", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Toast.makeText(this@ConverterRecursos, e.message, Toast.LENGTH_LONG).show()
+                } finally {
+                    progressBar.visibility = View.GONE
+                    buttonConverter.isEnabled = true
+                    buttonComprar.isEnabled = true
+                }
+            }
+        }
+
+        buttonVoltar.setOnClickListener {
+            finish()
         }
     }
 

@@ -1,10 +1,12 @@
 package com.example.carteiravirtual.controller
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.example.carteiravirtual.R
 import com.example.carteiravirtual.model.Moeda
@@ -20,11 +22,25 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnConverter: Button
 
     // Dados de exemplo
-    private val carteira = listOf(
-        Moeda(saldo = 100000.0, tipo = TipoMoeda.BRL),
-        Moeda(saldo = 50000.0, tipo = TipoMoeda.USD),
-        Moeda(saldo = 0.5, tipo = TipoMoeda.BTC)
+    private var carteira: MutableMap<TipoMoeda, Moeda> = mutableMapOf(
+        TipoMoeda.BRL to Moeda(saldo = 100000.0, tipo = TipoMoeda.BRL),
+        TipoMoeda.USD to Moeda(saldo = 50000.0, tipo = TipoMoeda.USD),
+        TipoMoeda.BTC to Moeda(saldo = 0.5, tipo = TipoMoeda.BTC)
     )
+
+    private val conversaoLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val dadosRetornados = result.data
+            if (dadosRetornados != null && dadosRetornados.hasExtra("CARTEIRA_ATUALIZADA_EXTRA")) {
+                val carteiraAtualizada = dadosRetornados.getSerializableExtra("CARTEIRA_ATUALIZADA_EXTRA") as? MutableMap<TipoMoeda, Moeda>
+
+                if (carteiraAtualizada != null) {
+                    this.carteira = carteiraAtualizada
+                    atualizarValores()
+                }
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,16 +52,18 @@ class MainActivity : AppCompatActivity() {
         tvSaldoBitcoin = findViewById(R.id.tvSaldoBitcoin)
         btnConverter = findViewById(R.id.btnConverter)
 
-        atualizarValores(carteira)
+        atualizarValores()
 
         btnConverter.setOnClickListener {
-            val intent = Intent(this, ConverterRecursosActivity::class.java)
-            startActivity(intent)
+            val intent = Intent(this, ConverterRecursos::class.java)
+
+            intent.putExtra("CARTEIRA_EXTRA", carteira as HashMap)
+            conversaoLauncher.launch(intent)
         }
     }
 
-    private fun atualizarValores(carteira: List<Moeda>) {
-        carteira.forEach { moeda ->
+    private fun atualizarValores() {
+        carteira.values.forEach { moeda ->
             when (moeda.tipo) {
                 TipoMoeda.BRL -> {
                     val formato = NumberFormat.getCurrencyInstance(Locale("pt", "BR"))
@@ -56,8 +74,7 @@ class MainActivity : AppCompatActivity() {
                     tvSaldoDolar.text = formato.format(moeda.saldo)
                 }
                 TipoMoeda.BTC -> {
-                    // Formato específico para Bitcoin
-                    tvSaldoBitcoin.text = "%.4f BTC".format(moeda.saldo)
+                    tvSaldoBitcoin.text = "%.5f BTC".format(moeda.saldo)
                 }
             }
         }
