@@ -1,5 +1,7 @@
 package com.example.carteiravirtual.controller
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
@@ -31,15 +33,20 @@ class ConverterRecursos : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var textViewResultado: TextView
 
-    private var carteira = mutableMapOf(
-        TipoMoeda.BRL to Moeda(id = 1, saldo = 100000.0, tipo = TipoMoeda.BRL),
-        TipoMoeda.USD to Moeda(id = 2, saldo = 500000.0, tipo = TipoMoeda.USD),
-        TipoMoeda.BTC to Moeda(id = 3, saldo = 0.5, tipo = TipoMoeda.BTC)
-    )
+    private lateinit var carteira: MutableMap<TipoMoeda, Moeda>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_converter_recursos)
+
+        val extras = intent.extras
+        if (extras != null && extras.containsKey("CARTEIRA_EXTRA")) {
+            carteira = intent.getSerializableExtra("CARTEIRA_EXTRA") as? MutableMap<TipoMoeda, Moeda> ?: carregarCarteiraPadrao()
+
+        } else {
+            Toast.makeText(this, "Erro ao carregar carteira. Usando dados padrão.", Toast.LENGTH_LONG).show()
+            carteira = carregarCarteiraPadrao()
+        }
 
         spinnerOrigem = findViewById(R.id.spinnerOrigem)
         spinnerDestino = findViewById(R.id.spinnerDestino)
@@ -51,6 +58,14 @@ class ConverterRecursos : AppCompatActivity() {
 
         setupSpinners()
         setupListeners()
+    }
+
+    private fun carregarCarteiraPadrao(): MutableMap<TipoMoeda, Moeda> {
+        return mutableMapOf(
+            TipoMoeda.BRL to Moeda(id = 1, saldo = 100000.0, tipo = TipoMoeda.BRL),
+            TipoMoeda.USD to Moeda(id = 2, saldo = 50000.0, tipo = TipoMoeda.USD),
+            TipoMoeda.BTC to Moeda(id = 3, saldo = 0.5, tipo = TipoMoeda.BTC),
+        )
     }
 
     private fun setupSpinners() {
@@ -112,6 +127,8 @@ class ConverterRecursos : AppCompatActivity() {
                     carteira[moedaOrigem] = carteira[moedaOrigem]!!.copy(saldo = saldoOrigemAtual - valorOrigem)
                     carteira[moedaDestino] = carteira[moedaDestino]!!.copy(saldo = saldoDestinoAtual + valorDestino)
 
+                    atualizarCarteira()
+
                     textViewResultado.text = "Convertido: ${formatarValor(valorDestino, moedaDestino)}"
                     editTextValorOrigem.text?.clear()
 
@@ -162,5 +179,12 @@ class ConverterRecursos : AppCompatActivity() {
             TipoMoeda.USD -> "$ ${"%.2f".format(valor)}"
             TipoMoeda.BTC -> "₿ ${"%.5f".format(valor)}"
         }
+    }
+
+    private fun atualizarCarteira() {
+        val intentResultado = Intent()
+
+        intentResultado.putExtra("CARTEIRA_ATUALIZADA_EXTRA", carteira as HashMap)
+        setResult(Activity.RESULT_OK, intentResultado)
     }
 }
